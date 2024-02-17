@@ -107,7 +107,7 @@
             idle = false;
             auto results = splitter(session,raw,n);
             session.incr(results.size());
-            process(results);
+            process(results,session);
             results.clear();
          } else if (n == -1) {
             if (errno == EWOULDBLOCK) {} /*read timeout - okay*/
@@ -135,14 +135,19 @@
    /**
     * 
    */
-   void basic::SessionHandler::process(const std::vector<std::string>& results) {
+   void basic::SessionHandler::process(const std::vector<std::string>& results , Session& session) {
       basic::BasicBuilder b;
       for (auto s : results) {
          auto m = b.decode(s);
       
          // PLACEHOLDER: now do something with the message
-         std::cerr << "M: [" << m.group() << "] " << m.name() << " - " 
+         std::cerr << "Message Recieved: [" << m.group() << "] " << m.name() << " - " 
                   << m.text() << std::endl;
+         
+         // Send acknowledgment back to the client
+         std::string ack = "Message received";
+        // Assuming you have a function like sendToClient(sessionId, message)
+         sendToClient(session.fd, ack);
          std::cerr.flush();
       }
    }
@@ -169,6 +174,13 @@
       } else 
          this->refreshRate = 0;
    }
+
+   void basic::SessionHandler::sendToClient(int clientSocket, const std::string& message) {
+      if (send(clientSocket, message.c_str(), message.length(), 0) == -1) {
+         std::cerr << "Failed to send message to client: " << strerror(errno) << std::endl;
+      }
+   }
+
 
    /**
     * 

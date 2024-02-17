@@ -8,6 +8,7 @@
 
 #include "socket/client.hpp"
 #include "payload/basicbuilder.hpp"
+#include <chrono>
 
 basic::BasicClient::BasicClient(std::string name, std::string ipaddr, unsigned int port) {
       this->name = name;
@@ -43,25 +44,30 @@ void basic::BasicClient::sendMessage(std::string m) {
    auto payload = bldr.encode(msg); 
    auto plen = payload.length();
 
-   while (this->good) {
-      auto n = ::write(this->clt, payload.c_str(), plen);
-      //auto n = ::send(this->clt, payload.c_str(), plen);
-      
-      if (n == -1) {
-         std::cerr << "--> send() error for " << m << ", n = " << n << ", errno = " << errno << std::endl;
-      } else if ( errno == ETIMEDOUT) { 
-         // @todo send portion not sent!
-         continue;
-      } else if (payload.length() != (std::size_t)n) {
-         // @todo hmmmm, houston we may have a problem
-         std::stringstream err;
-         err << "failed to fully send(), err = " << errno << std::endl;
-         throw std::runtime_error(err.str());
-      } else 
-         std::cerr << "sent: " << payload << ", size: " << plen << ", errno: " << errno << std::endl;
-   
-      break;
-   }
+   // Start timing
+    auto start = std::chrono::high_resolution_clock::now();
+
+    ssize_t n = ::write(this->clt, payload.c_str(), plen);
+    if (n < 0) {
+        std::cerr << "--> send() error for " << m << ", errno = " << strerror(errno) << std::endl;
+        return; // Exit if there was an error sending the message
+    }
+    std::cerr << "Message sent: " << payload << ", size: " << plen << std::endl;
+
+    // Wait for acknowledgment
+    char buffer[1024] = {0};
+    n = ::recv(this->clt, buffer, sizeof(buffer), 0);
+    if (n < 0) {
+        std::cerr << "--> recv() error, errno = " << strerror(errno) << std::endl;
+        return; // Exit if there was an error receiving the acknowledgment
+    }
+
+    // Stop timing
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> rtt = end - start;
+
+    std::cerr << "Acknowledgment received: " << std::string(buffer, n) << std::endl;
+    std::cerr << "RTT: " << rtt.count() << " ms" << std::endl;
 }
 
 void basic::BasicClient::connect() {

@@ -44,11 +44,12 @@ class SessionHandler {
     public: 
         SessionHandler();
         virtual ~SessionHandler() {stop();}
-
+        void sendToClient(int clientSocket, const std::string& message);
         void start();
         void stop();
         void addSession(int sessionSock);
-        virtual void process(const std::vector<std::string>& results);
+        virtual void process(const std::vector<std::string>& results, Session& s);
+        
         
         // if we use a handler per connection like the other lab examples in
         // python and java, we will create a problem with the resizing. Reason: 
