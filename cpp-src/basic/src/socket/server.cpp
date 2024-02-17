@@ -7,7 +7,7 @@
 #include <cerrno>
 #include <fcntl.h>
 
-#include "socket/server.hpp"
+#include "server.hpp"
 
 basic::BasicServer::BasicServer(std::string ipaddr, unsigned int port) {
       this->ipaddr =ipaddr;
