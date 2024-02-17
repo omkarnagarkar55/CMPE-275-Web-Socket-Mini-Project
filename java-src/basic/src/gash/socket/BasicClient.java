@@ -1,6 +1,8 @@
 package gash.socket;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 
 import gash.payload.BasicBuilder;
@@ -67,4 +69,21 @@ public class BasicClient {
 			e.printStackTrace();
 		}
 	}
+
+	public String receiveMessage() {
+		if (this.clt == null) {
+			System.out.println("No connection, cannot receive messages");
+			return null;
+		}
+
+		try {
+			// Assuming the server sends responses terminated by a newline
+			BufferedReader reader = new BufferedReader(new InputStreamReader(this.clt.getInputStream()));
+			return reader.readLine(); // Read the response from the server
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 }
