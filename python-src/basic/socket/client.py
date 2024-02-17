@@ -1,66 +1,53 @@
-import socket
-from basic.payload import builder
+import asyncio
+import sys
+import time
+import numpy as np
+from basic.payload import builder  # Adjust this import as necessary
 
-class BasicClient(object):
+class BasicClient:
     def __init__(self, name, ipaddr="127.0.0.1", port=2000):
-        self._clt = None
         self.name = name
         self.ipaddr = ipaddr
         self.port = port
-
         self.group = "public"
 
-        if self.ipaddr is None:
-            raise ValueError("IP address is missing or empty")
-        elif self.port is None:
-            raise ValueError("port number is missing")
-
-        self.connect()
-
-    def __del__(self):
-        self.stop()
-
-    def stop(self):
-        if self._clt is not None:
-            self._clt.close()
-        self._clt = None
-
-    def connect(self):
-        if self._clt is not None:
-            return
-
-        addr = (self.ipaddr,self.port)
-        self._clt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._clt.connect(addr)
-        #self._clt.setblocking(False)
-
-    def join(self, group):
-        self.group = group
-
-    def sendMsg(self, text):
-        if self._clt is None:
-            raise RuntimeError("No connection to server exists")
-
-        print(f"sending to group {self.group} from {self.name}: {text}")
+    async def sendMsg(self, message):
+        start_time = time.time()
+        reader, writer = await asyncio.open_connection(self.ipaddr, self.port)
         bldr = builder.BasicBuilder()
-        m = bldr.encode(self.name,self.group,text)
-        self._clt.send(bytes(m, "utf-8"))
+        encoded_message = bldr.encode(self.name, self.group, message)
+        writer.write(encoded_message.encode('utf-8'))
+        await writer.drain()
 
-    def groups(self):
-        # return list of groups
-        pass
+        data = await reader.read(2048)
+        round_trip_time = time.time() - start_time
+        print(f'Received: {data.decode()} in {round_trip_time:.4f} seconds')
 
-    def getMsgs(self):
-        # get the latest messages from a group
-        pass
+        writer.close()
+        await writer.wait_closed()
+        return round_trip_time
 
+    async def run(self, N):
+        round_trip_times = []
+        for i in range(1, N + 1):
+            message = f"{self.name} message {i}"
+            round_trip_time = await self.sendMsg(message)
+            round_trip_times.append(round_trip_time)
+            await asyncio.sleep(0.0001)  # Sleep for 0.1 ms
+        return round_trip_times
+
+async def main(clients_count, message_count):
+    tasks = []
+    for i in range(clients_count):
+        client = BasicClient(f"Client_{i+1}", "127.0.0.1", 2000)
+        tasks.append(client.run(message_count))
+    results = await asyncio.gather(*tasks)
+    # Optionally, aggregate and print/save results here
 
 if __name__ == '__main__':
-    clt = BasicClient("frida_kahlo","127.0.0.1",2000)
-    while True:
-        m = input("enter message: ")
-        if m == '' or m == 'exit':
-            break
-        else:
-            clt.sendMsg(m)
-            # clt.sendMsg(m)
+    if len(sys.argv) < 3:
+        print("Usage: python client.py <ClientsCount> <MessageCount>")
+        sys.exit(1)
+    clients_count = int(sys.argv[1])
+    message_count = int(sys.argv[2])
+    asyncio.run(main(clients_count, message_count))
