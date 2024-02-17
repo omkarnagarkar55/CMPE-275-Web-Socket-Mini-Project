@@ -54,9 +54,9 @@ async def main():
     results = []
 
     # Running tests
-    for scale, num_messages in scales.items():
-        for clients_count in client_counts:
-            print(f"Launching {clients_count} clients for '{scale}' scale with {num_messages} messages each.")
+    for clients_count in client_counts:
+        for scale_name, num_messages in scales.items():
+            print(f"Launching {clients_count} clients for '{scale_name}' scale with {num_messages} messages each.")
             await run_clients(clients_count, num_messages)
             
             # Measure two-way connection time
@@ -72,18 +72,26 @@ async def main():
             percentile_90 = np.percentile(total_times, 90)
             
             # Add the metrics to the results list
-            results.append((scale, clients_count, num_messages, sum(total_times), avg_time, median_time, percentile_70, percentile_90))
+            results.append({
+                'Number of Clients': clients_count,
+                'Scale': scale_name,
+                'Total Time': sum(total_times),
+                'Avg Time': avg_time,
+                'Median Time': median_time,
+                '70th Percentile': percentile_70,
+                '90th Percentile': percentile_90
+            })
 
     # Write results to a CSV file
     with open('test_results.csv', 'w', newline='') as csvfile:
-        fieldnames = ['Scale', 'Number of Clients', 'Number of Messages', 'Total time', 'Avg Time', 'Median Time', '70th percentile', '90th percentile']
+        fieldnames = ['Number of Clients', 'Scale', 'Total Time', 'Avg Time', 'Median Time', '70th Percentile', '90th Percentile']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         
         writer.writeheader()
         for result in results:
-            writer.writerow({'Scale': result[0], 'Number of Clients': result[1], 'Number of Messages': result[2], 'Total time': result[3], 'Avg Time': result[4], 'Median Time': result[5], '70th percentile': result[6], '90th percentile': result[7]})
+            writer.writerow(result)
 
-    print("Tests initiated. Results saved to 'test_results.csv'.")
+    print("Tests complete. Results saved to 'test_results.csv'.")
     input("Press Enter to stop the server...")
     stop_server(server_process)
 
