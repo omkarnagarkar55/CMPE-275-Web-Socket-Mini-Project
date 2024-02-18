@@ -64,13 +64,14 @@ class SessionHandler(threading.Thread):
             self._cltconn = None
             self.good = False
 
-    def process(self,raw):
+    def process(self, raw):
         try:
-            bldr = builder.BasicBuilder()
-            name,group,text = bldr.decode(raw)
-            print(f"from {name}, to group: {group}, text: {text}")
+            # Assume the message is a simple UTF-8 encoded string
+            text = raw
+            print(f"received text: {text}")
         except Exception as e:
             pass
+
 
     def run(self):
         while self.good:

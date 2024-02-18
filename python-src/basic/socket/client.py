@@ -41,10 +41,9 @@ class BasicClient(object):
         if self._clt is None:
             raise RuntimeError("No connection to server exists")
 
-        print(f"sending to group {self.group} from {self.name}: {text}")
-        bldr = builder.BasicBuilder()
-        m = bldr.encode(self.name,self.group,text)
-        self._clt.send(bytes(m, "utf-8"))
+        # Sending message directly without encoding
+        print(f"sending from {self.name}: {text}")
+        self._clt.sendall(bytes(text + "\n", "utf-8"))
 
     def groups(self):
         # return list of groups
