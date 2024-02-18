@@ -1,0 +1,17 @@
+.vscode/
+build/
+cpp-src/basic/CMakeCache.txt
+cpp-src/basic/CMakeFiles/
+cpp-src/basic/Makefile
+cpp-src/basic/bin/
+cpp-src/basic/cmake_install.cmake
+cpp-src/basic/compile_commands.json
+cpp-src/basic/lib/
+cpp-src/basic/src/CMakeCache.txt
+cpp-src/basic/src/CMakeFiles/
+cpp-src/basic/src/Makefile
+cpp-src/basic/src/cmake_install.cmake
+cpp-src/basic/test/CMakeFiles/
+cpp-src/basic/test/CTestTestfile.cmake
+cpp-src/basic/test/Makefile
+cpp-src/basic/test/cmake_install.cmake
