@@ -60,8 +60,13 @@ public class BasicClient {
 		}
 
 		try {
-			BasicBuilder builder = new BasicBuilder();
-			byte[] msg = builder.encode(new Message(name, group, message)).getBytes();
+			// Format the message as "name:group:message"
+			String formattedMessage = String.format("%s,%s,%s",this.name, this.group, message);
+
+			// Convert the formatted message to bytes
+			byte[] msg = formattedMessage.getBytes();
+
+			// Send the message
 			this.clt.getOutputStream().write(msg);
 		} catch (Exception e) {
 			e.printStackTrace();

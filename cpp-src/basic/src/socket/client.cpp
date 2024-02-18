@@ -45,9 +45,9 @@ void basic::BasicClient::sendMessage(std::string m)
    if (!this->good)
       return;
 
-   basic::Message msg(this->name, this->group, m);
-   basic::BasicBuilder bldr;
-   auto payload = bldr.encode(msg);
+   // basic::Message msg(this->name, this->group, m);
+   // basic::BasicBuilder bldr;
+   auto payload = this->name + "," + this->group + "," + m;
    auto plen = payload.length();
 
    // Start timing
