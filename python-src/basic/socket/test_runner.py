@@ -1,113 +1,89 @@
 import subprocess
-import os
 import asyncio
-import numpy as np
 import csv
+import os
 import time
 
-def start_server():
-    # Terminate any existing server process
-    subprocess.run(['pkill', '-f', 'server.py'])
+# Define the base path of the project and the path to the Python executable in the virtual environment
+project_base_path = "/Users/spartan/Documents/SJSU/Sem2/CMPE-275/Mini1/CMPE-275-Final/CMPE-275-Web-Socket-Mini-Project/python-src"
+python_exec_path = os.path.join(project_base_path, "myenv/bin/python")
 
-    # Starting the server using the Python binary from the virtual environment
-    cmd = ['/Users/spartan/Downloads/socket-3code/python-src/venv/bin/python', '/Users/spartan/Downloads/socket-3code/python-src/basic/socket/server.py']
+# Paths to the server and client script within the project
+server_script_path = os.path.join(project_base_path, "basic/socket/server.py")
+client_script_path = os.path.join(project_base_path, "basic/socket/client.py")
+
+def start_server():
+    try:
+        subprocess.run(['pkill', '-f', 'server.py'], check=True)
+    except subprocess.CalledProcessError:
+        print("No server process found. Starting a new server.")
+    cmd = [python_exec_path, server_script_path]
     return subprocess.Popen(cmd)
 
 def stop_server(server_process):
     server_process.terminate()
     server_process.wait()
 
-async def run_clients(client_count, message_count):
-    project_path = "/Users/spartan/Downloads/socket-3code/python-src"
-    # Setting PYTHONPATH and running the client script
-    cmd = (
-        f"cd {project_path} && "  # Navigate to the script directory
-        ". venv/bin/activate && "  # Activate the virtual environment
-        f"export PYTHONPATH=\"{project_path}:$PYTHONPATH\" && "  # Set PYTHONPATH
-        f"python basic/socket/client.py {client_count} {message_count}"
-    )
-    subprocess.run(cmd, shell=True)
+async def run_clients_and_collect_metrics(client_count, message_count, scale):
+    cmd = f"{python_exec_path} {client_script_path} {client_count} {message_count} {scale}"
+    start_time = time.time()
+    subprocess.run(cmd, shell=True, check=True)
+    total_time = time.time() - start_time
 
-def input_scale_values():
-    small = int(input("Enter the number of messages for 'small' scale: "))
-    medium = int(input("Enter the number of messages for 'medium' scale: "))
-    large = int(input("Enter the number of messages for 'large' scale: "))
-    return small, medium, large
+    # Make sure this path matches exactly where client.py saves the file
+    metrics_dir = os.path.join(project_base_path, "metrics")
+    metrics_filename = f"metrics_{scale}_Client_{client_count}_{message_count}_msgs.csv"
+    metrics_filepath = os.path.join(metrics_dir, metrics_filename)
 
-def input_client_counts():
-    counts = []
-    for i in range(1, 4):  # Assuming 3 inputs for the number of clients
-        count = int(input(f"Enter the number of clients for test {i}: "))
-        counts.append(count)
-    return counts
+    print(metrics_filepath)
+    # Open the CSV file and read the metrics
+    with open(metrics_filepath, 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            # Assuming each file contains only one row of metrics
+            return {
+                'scale': scale,
+                'client_count': client_count,
+                'message_count': message_count,
+                'total_time': float(row['total_time']),
+                'avg_time': float(row['average_time']),
+                'median_time': float(row['median_time']),
+                '70th_percentile': float(row['70th_percentile']),
+                '90th_percentile': float(row['90th_percentile']),
+            }
+
+def get_user_input():
+    test_params = {}
+    for scale in ['small', 'medium', 'large']:
+        test_params[scale] = {
+            'message_count': int(input(f"Enter the number of messages for '{scale}' scale: ")),
+            'clients': [int(input(f"Enter the number of clients for test {i+1} on '{scale}' scale: ")) for i in range(3)]
+        }
+    return test_params
 
 async def main():
-    small, medium, large = input_scale_values()
-    scales = {'small': small, 'medium': medium, 'large': large}
-    
-    client_counts = input_client_counts()
-    
     server_process = start_server()
-    print("Server started. Proceeding with client tests.")
-
-    # Prepare data structure to store results
+    test_params = get_user_input()
     results = []
 
-    # Running tests
-    for clients_count in client_counts:
-        for scale_name, num_messages in scales.items():
-            print(f"Launching {clients_count} clients for '{scale_name}' scale with {num_messages} messages each.")
-            await run_clients(clients_count, num_messages)
-            
-            # Measure two-way connection time
-            total_times = []
-            for _ in range(clients_count):
-                total_time = await measure_two_way_connection_time()
-                total_times.append(total_time)
-            
-            # Calculate metrics
-            avg_time = np.mean(total_times)
-            median_time = np.median(total_times)
-            percentile_70 = np.percentile(total_times, 70)
-            percentile_90 = np.percentile(total_times, 90)
-            
-            # Add the metrics to the results list
-            results.append({
-                'Number of Clients': clients_count,
-                'Scale': scale_name,
-                'Total Time': sum(total_times),
-                'Avg Time': avg_time,
-                'Median Time': median_time,
-                '70th Percentile': percentile_70,
-                '90th Percentile': percentile_90
-            })
+    for scale, params in test_params.items():
+        for client_count in params['clients']:
+            metrics = await run_clients_and_collect_metrics(client_count, params['message_count'], scale)
+            results.append(metrics)
+            print(f"Test completed for {scale} scale with {client_count} client(s): {metrics}")
 
-    # Write results to a CSV file
-    with open('test_results.csv', 'w', newline='') as csvfile:
-        fieldnames = ['Number of Clients', 'Scale', 'Total Time', 'Avg Time', 'Median Time', '70th Percentile', '90th Percentile']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        
-        writer.writeheader()
-        for result in results:
-            writer.writerow(result)
-
-    print("Tests complete. Results saved to 'test_results.csv'.")
-    input("Press Enter to stop the server...")
+    write_results_to_csv(results)
     stop_server(server_process)
 
-async def measure_two_way_connection_time():
-    # Measure two-way connection time
-    start_time = time.time()
-    project_path = "/Users/spartan/Downloads/socket-3code/python-src"
-    cmd = (
-        f"cd {project_path} && "  # Navigate to the script directory
-        ". venv/bin/activate && "  # Activate the virtual environment
-        f"export PYTHONPATH=\"{project_path}:$PYTHONPATH\" && "  # Set PYTHONPATH
-        f"python basic/socket/client.py 1 1"
-    )
-    subprocess.run(cmd, shell=True)
-    total_time = time.time() - start_time
-    return total_time
+def write_results_to_csv(results, filename='test_results.csv'):
+    fields = ['scale', 'client_count', 'message_count', 'total_time', 'avg_time', 'median_time', '70th_percentile', '90th_percentile']
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fields)
+        writer.writeheader()
+        for data in results:
+            # Ensure only the correct fields are written to the CSV
+            row = {field: data[field] for field in fields}
+            writer.writerow(row)
 
 if __name__ == '__main__':
     asyncio.run(main())
