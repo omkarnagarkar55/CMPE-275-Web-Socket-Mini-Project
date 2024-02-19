@@ -15,39 +15,50 @@ class BasicClient:
         self.ipaddr = ipaddr
         self.port = port
         self.group = "public"
-        self.round_trip_times = []  # To store round-trip times for each message
-        self.scale = scale  # New attribute to keep track of the test scale
+        self.round_trip_times = []
+        self.scale = scale
+        self.reader = None
+        self.writer = None
+
+    async def connect(self):
+        self.reader, self.writer = await asyncio.open_connection(self.ipaddr, self.port)
 
     async def sendMsg(self, message):
+        if self.writer is None:
+            raise Exception("Connection not established. Call connect() first.")
+            
         start_time = time.time()
-        reader, writer = await asyncio.open_connection(self.ipaddr, self.port)
         bldr = BasicBuilder()
         encoded_message = bldr.encode(self.name, self.group, message)
-        writer.write(encoded_message.encode('utf-8'))
-        await writer.drain()
+        self.writer.write(encoded_message.encode('utf-8'))
+        await self.writer.drain()
 
-        data = await reader.read(2048)
+        data = await self.reader.read(2048)
         round_trip_time = time.time() - start_time
         self.round_trip_times.append(round_trip_time)
         print(f'Received: {data.decode()} in {round_trip_time:.4f} seconds')
 
-        writer.close()
-        await writer.wait_closed()
-
     async def run(self, N):
+        messages_per_client = N
+        await self.connect()  # Establish connection before sending messages
         start_time = time.time()
         for i in range(N):
             message = f"{self.name} message {i+1}"
             await self.sendMsg(message)
         total_time = time.time() - start_time
-        self.save_round_trip_times()
+        self.save_round_trip_times(N)
         self.calculate_and_print_metrics()
-        self.save_metrics(total_time, N)  # Pass N (message_count) to save_metrics
+        self.save_metrics(total_time, messages_per_client)
 
-    def save_round_trip_times(self):
+        self.writer.close()  # Close the connection after sending all messages
+        await self.writer.wait_closed()
+
+    def save_round_trip_times(self, messages_per_client):
         validate_dir = os.path.join(project_base_path, "validate")
         os.makedirs(validate_dir, exist_ok=True)
-        filename = f'metrics_{self.scale}_{self.name}_round_trip_times.txt'  # Corrected filename pattern
+        filename = f'metrics_{self.scale}_{self.name}_{messages_per_client}_msgs.txt'  # Corrected filename pattern
+        print(f'round trip time filename: {filename} ,messages_per_client:{messages_per_client}')
+        print(f'txt_file_name: {filename}')
         filepath = os.path.join(validate_dir, filename)
         with open(filepath, 'w') as file:
             for rt_time in self.round_trip_times:
@@ -74,6 +85,7 @@ class BasicClient:
         metrics_dir = os.path.join(project_base_path, "metrics")
         os.makedirs(metrics_dir, exist_ok=True)
         filename = f'metrics_{self.scale}_{self.name}_{message_count}_msgs.csv'
+        print(f'csv_file_name: {filename}')
         filepath = os.path.join(metrics_dir, filename)
         with open(filepath, 'w', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=metrics.keys())
@@ -81,8 +93,9 @@ class BasicClient:
             writer.writerow(metrics)   
 
 async def main(clients_count, message_count, scale):
+        messages_per_client = message_count // clients_count
         clients = [BasicClient(f"Client_{i+1}", scale=scale) for i in range(clients_count)]
-        tasks = [client.run(message_count) for client in clients]
+        tasks = [client.run(messages_per_client) for client in clients]
         await asyncio.gather(*tasks)
 
 if __name__ == '__main__':

@@ -25,17 +25,18 @@ def stop_server(server_process):
     server_process.wait()
 
 async def run_clients_and_collect_metrics(client_count, message_count, scale):
+    # messages_per_client = message_count // client_count
     cmd = f"{python_exec_path} {client_script_path} {client_count} {message_count} {scale}"
     start_time = time.time()
     subprocess.run(cmd, shell=True, check=True)
     total_time = time.time() - start_time
 
     # Make sure this path matches exactly where client.py saves the file
+    messages_per_client = message_count // client_count
     metrics_dir = os.path.join(project_base_path, "metrics")
-    metrics_filename = f"metrics_{scale}_Client_{client_count}_{message_count}_msgs.csv"
+    metrics_filename = f"metrics_{scale}_Client_{client_count}_{messages_per_client}_msgs.csv"
     metrics_filepath = os.path.join(metrics_dir, metrics_filename)
 
-    print(metrics_filepath)
     # Open the CSV file and read the metrics
     with open(metrics_filepath, 'r') as csvfile:
         reader = csv.DictReader(csvfile)
