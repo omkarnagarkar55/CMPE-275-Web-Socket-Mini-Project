@@ -66,9 +66,10 @@ class SessionHandler(threading.Thread):
 
     def process(self,raw):
         try:
-            bldr = builder.BasicBuilder()
-            name,group,text = bldr.decode(raw)
-            print(f"from {name}, to group: {group}, text: {text}")
+            # bldr = builder.BasicBuilder()
+            # name,group,text = bldr.decode(raw)
+            # print(f"from {name}, to group: {group}, text: {text}")
+            print(f"received text: {raw}")
         except Exception as e:
             pass
 

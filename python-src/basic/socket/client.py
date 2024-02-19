@@ -1,5 +1,6 @@
 import socket
 from basic.payload import builder
+import time
 
 class BasicClient(object):
     def __init__(self, name, ipaddr="127.0.0.1", port=2000):
@@ -42,9 +43,18 @@ class BasicClient(object):
             raise RuntimeError("No connection to server exists")
 
         print(f"sending to group {self.group} from {self.name}: {text}")
-        bldr = builder.BasicBuilder()
-        m = bldr.encode(self.name,self.group,text)
+  
+        m = self.name+","+self.group+","+text
+        send_time = time.time()
         self._clt.send(bytes(m, "utf-8"))
+
+        ack = self._clt.recv(1024)
+        receive_time = time.time()
+        rtt = receive_time - send_time
+        print(f"RTT: {rtt:.3f} seconds")
+        
+        print(f"Acknowledgment received: {ack.decode('utf-8')}")
+
 
     def groups(self):
         # return list of groups
@@ -56,7 +66,7 @@ class BasicClient(object):
 
 
 if __name__ == '__main__':
-    clt = BasicClient("frida_kahlo","127.0.0.1",2000)
+    clt = BasicClient("Anonymous","127.0.0.1",2000)
     while True:
         m = input("enter message: ")
         if m == '' or m == 'exit':
