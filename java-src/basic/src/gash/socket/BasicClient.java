@@ -49,7 +49,6 @@ public class BasicClient {
 
 		try {
 			this.clt = new Socket(this.ipaddr, this.port);
-			System.out.println("Connected to " + clt.getInetAddress().getHostAddress());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
