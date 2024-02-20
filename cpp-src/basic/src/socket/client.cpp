@@ -115,6 +115,8 @@ void basic::BasicClient::connect()
    this->good = true;
 }
 
+
+// Took help from https://www.geeksforgeeks.org/socket-programming-cc/
 void basic::BasicClient::run()
 {
    // Attempt to connect to the server
