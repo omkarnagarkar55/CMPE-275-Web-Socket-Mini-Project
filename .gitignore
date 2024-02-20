@@ -23,3 +23,4 @@ java-src/basic/classes/gash/payload/Message.class
 java-src/basic/classes/gash/socket/BasicClient.class
 java-src/basic/classes/gash/socket/BasicServer.class
 java-src/basic/classes/gash/socket/SessionHandler.class
+python-src/venv
