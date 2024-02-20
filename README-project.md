@@ -22,9 +22,9 @@ being performant and hardened:
 
    | Clt/Svr  | Java     | Python3  | C/C++    |
    | -------- | :------: | :------: | :------: |
-   | Java     | Y        |          |          | 
-   | Python3  |          | Y        | Y        | 
-   | C/C++    |          | Y        | Y        | 
+   | Java     | Y        | Y (Done) | Y (Done) | 
+   | Python3  | Y (Done) | Y        | Y        | 
+   | C/C++    | Y (Done) | Y        | Y        | 
 
 
 Regarding features. It can be tempting to extend functionality

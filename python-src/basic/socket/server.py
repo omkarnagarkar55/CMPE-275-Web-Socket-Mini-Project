@@ -70,6 +70,10 @@ class SessionHandler(threading.Thread):
             # name,group,text = bldr.decode(raw)
             # print(f"from {name}, to group: {group}, text: {text}")
             print(f"received text: {raw}")
+
+            # After processing the message, send an ACK back to the client
+            ack_message = "ACK: Message received\n"
+            self._cltconn.sendall(ack_message.encode('utf-8'))
         except Exception as e:
             pass
 

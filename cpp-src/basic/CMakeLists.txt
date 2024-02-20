@@ -70,3 +70,7 @@ include(CheckIncludeFile)
 
 add_subdirectory(src)
 add_subdirectory(test)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+set(CMAKE_CXX_CLANG_TIDY clang-tidy;--extra-arg=-Wno-unknown-warning-option)

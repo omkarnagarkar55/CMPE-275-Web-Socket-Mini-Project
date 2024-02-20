@@ -1,4 +1,4 @@
-.vscode/
+gu.vscode/
 build/
 cpp-src/basic/CMakeCache.txt
 cpp-src/basic/CMakeFiles/
@@ -15,3 +15,11 @@ cpp-src/basic/test/CMakeFiles/
 cpp-src/basic/test/CTestTestfile.cmake
 cpp-src/basic/test/Makefile
 cpp-src/basic/test/cmake_install.cmake
+java-src/basic/classes/BuilderTest.class
+java-src/basic/classes/gash/app/ClientApp.class
+java-src/basic/classes/gash/app/ServerApp.class
+java-src/basic/classes/gash/payload/BasicBuilder.class
+java-src/basic/classes/gash/payload/Message.class
+java-src/basic/classes/gash/socket/BasicClient.class
+java-src/basic/classes/gash/socket/BasicServer.class
+java-src/basic/classes/gash/socket/SessionHandler.class

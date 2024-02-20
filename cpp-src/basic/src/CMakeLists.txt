@@ -29,3 +29,6 @@ install(TARGETS serverApp clientApp CONFIGURATIONS Release
 
 # for clang
 #set_target_properties(clientApp PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
