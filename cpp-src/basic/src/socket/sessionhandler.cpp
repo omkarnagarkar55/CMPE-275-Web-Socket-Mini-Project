@@ -160,10 +160,10 @@
          // gradually slow down polling while no activity
          if (this->refreshRate < 3000) this->refreshRate += 250;
       
-         if (sDebug > 0) {
-            std::cerr << this->sessions.size() << " sessions, sleeping " 
-                      << this->refreshRate << " ms..." << std::endl;
-         }
+         // if (sDebug > 0) {
+         //    std::cerr << this->sessions.size() << " sessions, sleeping " 
+         //              << this->refreshRate << " ms..." << std::endl;
+         // }
 
          std::this_thread::sleep_for(std::chrono::milliseconds(this->refreshRate));
       } else 
